@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 import './models/slot.dart';
-
 
 void main() => runApp(Parklk());
 
@@ -12,16 +10,13 @@ class Parklk extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title:'test',
+      title: 'test',
       home: Parklkapp(),
-
     );
   }
 }
 
-
 class Parklkapp extends StatefulWidget {
-
   Parklkapp() : super();
 
   final String appTitle = "Park LK";
@@ -31,127 +26,122 @@ class Parklkapp extends StatefulWidget {
 }
 
 class _ParklkappState extends State<Parklkapp> {
-
-
   String firestoreCollectionName = "parking";
 
   Slot currentSlot;
 
-  getAll(){
+  getAll() {
+    return Firestore.instance.collection(firestoreCollectionName).snapshots();
+  }
 
-  return Firestore.instance.collection(firestoreCollectionName).snapshots();
-}
+  Widget buildBody(BuildContext context) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: getAll(),
+      // ignore: missing_return
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('Error');
+        }
+        if (snapshot.hasData) {
+          print("Documents -> ${snapshot.data.documents}");
+          return buildList(context, snapshot.data.documents);
+        }
+      },
+    );
+  }
 
+  Widget buildList(BuildContext context, List<DocumentSnapshot> snapshot) {
+    return ListView(
+      children: snapshot.map((data) => listItemBuild(context, data)).toList(),
+    );
+  }
 
-  Widget buildBody(BuildContext context){
+  Widget listItemBuild(BuildContext context, DocumentSnapshot data) {
+    final slot = Slot.fromSnapshot(data);
 
-  return StreamBuilder<QuerySnapshot>(
-    stream: getAll(),
-    builder: (context,snapshot){
-      if(snapshot.hasError){
-        return Text('Error');
-      }
-      if(snapshot.hasData){
-        print("Documents -> ${snapshot.data.documents}");
-        return buildList(context,snapshot.data.documents);
-      }
-    },
-  );
-}
-
-
-Widget buildList(BuildContext context, List<DocumentSnapshot> snapshot){
-
-  return ListView(
-    children: snapshot.map((data) => listItemBuild(context,data)).toList(),
-  );
-
-}
-
-Widget listItemBuild(BuildContext context, DocumentSnapshot data){
-
-  final slot = Slot.fromSnapshot(data);
-
-  return Padding(
-    key: ValueKey(slot.slot),
-    padding: EdgeInsets.symmetric(vertical : 3, horizontal: 0),
-    child: Container(
-        
+    return Padding(
+      key: ValueKey(slot.slot),
+      padding: EdgeInsets.symmetric(vertical: 3, horizontal: 0),
+      child: Container(
         decoration: BoxDecoration(
-        border: Border.all(color: Colors.blue),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: SingleChildScrollView(
-        child: ListTile(
-          title: Container(
-            // color: slot.availability=="1" ? Colors.red : Colors.green,
-            child: Column(
-              children: <Widget>[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                  Icon(Icons.directions_car , size: 50, color: slot.availability=="0" ? Colors.green : Colors.red),
-                  Text("Parking Slot No: "+ slot.slot, style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500
-                  ), ),
+          color: slot.availability == "0"
+              ? Colors.lightGreen[300]
+              : Colors.redAccent[100],
+          border: Border.all(
+            color: slot.availability == "0" ? Colors.green : Colors.red,
+          ),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: SingleChildScrollView(
+          child: ListTile(
+            title: Container(
+              // color: slot.availability=="1" ? Colors.red : Colors.green,
+              child: Column(
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Icon(Icons.directions_car,
+                          size: 40,
+                          color: slot.availability == "0"
+                              ? Colors.green
+                              : Colors.red),
+                      Text(
+                        "    Parking Slot No: " + slot.slot,
+                        style: TextStyle(
+                            color: slot.availability == "0"
+                                ? Colors.green
+                                : Colors.red,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ),
+                  // Divider(),
                 ],
-                ),
-                // Divider(),
-                Row(
-                  children: <Widget>[
-                  // Icon(Icons.person, color: Colors.purple,),
-                  // Text(slot.availability),
-
-
-                ],
-                )
-              ],
-            ), 
-            
+              ),
+            ),
           ),
         ),
       ),
-      
-    ),
-  );
-
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.deepPurpleAccent,
       resizeToAvoidBottomPadding: false,
-
       appBar: AppBar(
+        backgroundColor: Colors.deepPurple,
         title: Text(widget.appTitle),
-        actions: <Widget>[
-
-        ],
+        actions: <Widget>[],
       ),
       body: Container(
-        padding: EdgeInsets.all(19),
+        padding: EdgeInsets.all(15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-          Text("Welcome to Park.LK", style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w800
-        ),),
-          SizedBox(
-            height: 20,
-          ),
-          Flexible(child: buildBody(context),)
-
-
+            Image.asset(
+              'images/parklk.png',
+              height: 100,
+            ),
+            Text(
+              'To find a parking slot',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500),
+            ),
+            SizedBox(
+              height: 8,
+            ),
+            Flexible(
+              child: buildBody(context),
+            )
           ],
-
         ),
-
-
-
-
       ),
     );
   }
